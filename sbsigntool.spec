@@ -21,8 +21,10 @@ BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	binutils-devel
 BuildRequires:	gnu-efi
+BuildRequires:	help2man
 BuildRequires:	libuuid-devel
 BuildRequires:	openssl-devel
+BuildRequires:	pkgconfig
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %ifarch %{ix86}
