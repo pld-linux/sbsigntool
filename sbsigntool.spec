@@ -5,7 +5,7 @@
 Summary:	Signing utility for UEFI secure boot
 Name:		sbsigntool
 Version:	0.6
-Release:	0.1
+Release:	1
 License:	GPL v3
 Group:		Applications
 # git://kernel.ubuntu.com/jk/sbsigntool a7577f56b3c3c6e314576809cc9ce1bde94ae727
@@ -24,6 +24,16 @@ BuildRequires:	gnu-efi
 BuildRequires:	libuuid-devel
 BuildRequires:	openssl-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+
+%ifarch %{ix86}
+%define		efi_arch ia32
+%else
+%ifarch %{x8664}
+%define		efi_arch x86_64
+%else
+%define		efi_arch %{_arch}
+%endif
+%endif
 
 %description
 Utilites for signing and verifying files for UEFI Secure Boot.
@@ -44,9 +54,7 @@ lib/ccan.git/tools/create-ccan-tree \
 %{__automake}
 
 %configure \
-%ifarch %{ix86}
-	CPPFLAGS="%{rpmcppflags} -I/usr/include/efi/ia32"
-%endif
+	CPPFLAGS="%{rpmcppflags} -I/usr/include/efi/%{efi_arch}"
 %{__make}
 
 %{?with_tests:%{__make} -C tests test}
