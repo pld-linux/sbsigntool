@@ -19,7 +19,10 @@ Patch0:		%{name}-efivars_magic.patch
 URL:		https://wiki.ubuntu.com/UEFI/SecureBoot
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	binutils-devel
 BuildRequires:	gnu-efi
+BuildRequires:	libuuid-devel
+BuildRequires:	openssl-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
