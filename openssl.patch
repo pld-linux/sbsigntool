@@ -12,36 +12,32 @@ Bug-Ubuntu: https://bugs.launchpad.net/bugs/1474541
  src/sbverify.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/src/sbverify.c b/src/sbverify.c
-index fb03d21..35890b9 100644
---- a/src/sbverify.c
-+++ b/src/sbverify.c
-@@ -201,6 +201,7 @@ static int x509_verify_cb(int status, X509_STORE_CTX *ctx)
+diff -urNp -x '*.orig' sbsigntool-0.6.org/src/sbkeysync.c sbsigntool-0.6/src/sbkeysync.c
+--- sbsigntool-0.6.org/src/sbkeysync.c	2012-10-11 14:32:32.000000000 +0200
++++ sbsigntool-0.6/src/sbkeysync.c	2021-10-03 23:16:05.621000201 +0200
+@@ -203,16 +203,15 @@ static int x509_key_parse(struct key *ke
+ 		return -1;
  
- 	/* all certs given with the --cert argument are trusted */
- 	else if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY ||
-+			err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
- 			err == X509_V_ERR_CERT_UNTRUSTED) {
+ 	/* we use the X509 serial number as the key ID */
+-	if (!x509->cert_info || !x509->cert_info->serialNumber)
++	serial = X509_get_serialNumber(x509);
++	if (!serial)
+ 		goto out;
  
- 		if (cert_in_store(ctx->current_cert, ctx))
--- 
-2.1.4
-
-Author: Ben Hutchings <ben@decadent.org.uk>
-Date: Sun, 26 Jun 2016 22:04:29 +0200
-Description: Update OpenSSL API usage to support OpenSSL 1.1
- Most structure definitions in OpenSSL are now opaque and we must call
- the appropriate accessor functions to get information from them.
- Not all the accessors are available in older versions, so define the
- missing accessors as macros.
- .
- The X509_retrieve_match() function is no longer usable, as we cannot
- initialise an X509_OBJECT ourselves.  Instead, iterate over the
- certificate store and use X509_OBJECT_get_type and X509_cmp to
- compare certificates.
-
---- a/src/sbverify.c
-+++ b/src/sbverify.c
+-	serial = x509->cert_info->serialNumber;
+-
+ 	key->id_len = ASN1_STRING_length(serial);
+ 	key->id = talloc_memdup(key, ASN1_STRING_data(serial), key->id_len);
+ 
+ 	key->description = talloc_array(key, char, description_len);
+-	X509_NAME_oneline(x509->cert_info->subject,
++	X509_NAME_oneline(X509_get_subject_name(x509),
+ 			key->description, description_len);
+ 
+ 	rc = 0;
+diff -urNp -x '*.orig' sbsigntool-0.6.org/src/sbverify.c sbsigntool-0.6/src/sbverify.c
+--- sbsigntool-0.6.org/src/sbverify.c	2012-10-11 14:32:32.000000000 +0200
++++ sbsigntool-0.6/src/sbverify.c	2021-10-03 23:16:05.621000201 +0200
 @@ -55,6 +55,14 @@
  #include <openssl/pem.h>
  #include <openssl/x509v3.h>
@@ -127,7 +123,7 @@ Description: Update OpenSSL API usage to support OpenSSL 1.1
  }
  
  static int x509_verify_cb(int status, X509_STORE_CTX *ctx)
-@@ -195,8 +218,9 @@ static int x509_verify_cb(int status, X5
+@@ -195,15 +218,17 @@ static int x509_verify_cb(int status, X5
  	int err = X509_STORE_CTX_get_error(ctx);
  
  	/* also accept code-signing keys */
@@ -139,34 +135,12 @@ Description: Update OpenSSL API usage to support OpenSSL 1.1
  		status = 1;
  
  	/* all certs given with the --cert argument are trusted */
-@@ -204,7 +228,7 @@ static int x509_verify_cb(int status, X5
- 			err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
+ 	else if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY ||
++			err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT ||
  			err == X509_V_ERR_CERT_UNTRUSTED) {
  
 -		if (cert_in_store(ctx->current_cert, ctx))
 +		if (cert_in_store(X509_STORE_CTX_get_current_cert(ctx), ctx))
  			status = 1;
  	}
- 	/* UEFI doesn't care about expired signatures, so we shouldn't either. */
---- a/src/sbkeysync.c
-+++ b/src/sbkeysync.c
-@@ -204,16 +204,15 @@ static int x509_key_parse(struct key *ke
- 		return -1;
  
- 	/* we use the X509 serial number as the key ID */
--	if (!x509->cert_info || !x509->cert_info->serialNumber)
-+	serial = X509_get_serialNumber(x509);
-+	if (!serial)
- 		goto out;
- 
--	serial = x509->cert_info->serialNumber;
--
- 	key->id_len = ASN1_STRING_length(serial);
- 	key->id = talloc_memdup(key, ASN1_STRING_data(serial), key->id_len);
- 
- 	key->description = talloc_array(key, char, description_len);
--	X509_NAME_oneline(x509->cert_info->subject,
-+	X509_NAME_oneline(X509_get_subject_name(x509),
- 			key->description, description_len);
- 
- 	rc = 0;

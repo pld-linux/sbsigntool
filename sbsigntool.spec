@@ -6,7 +6,7 @@ Summary:	Signing utility for UEFI secure boot
 Summary(pl.UTF-8):	Narzędzie do podpisywania dla bezpiecznego rozruchu UEFI
 Name:		sbsigntool
 Version:	0.6
-Release:	3
+Release:	4
 License:	GPL v3+ with OpenSSL exception
 Group:		Applications/System
 # git://kernel.ubuntu.com/jk/sbsigntool a7577f56b3c3c6e314576809cc9ce1bde94ae727
